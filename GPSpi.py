@@ -17,7 +17,26 @@ import gps.py
 
 class GPSpi():
 
+    def __init__(self):
+        self.exit = False
+        self.navstat_mode = 0
+        # Switches for autopilot, routing, and AIS
+        self.auto = False
+        self.ais = False
+        self.aismap_data = None
+        # Location and baudrate of serial device
+        self.serial_info = [None, None]
 
+        self.eng_tach_rose_1 = [[395, 263, '0'], [273, 152, '10'], [389, 38, '20'], [506, 152, '30']]
+        self.eng_tach_rose_2 = [[312, 232, '5'], [298, 75, '15'], [476, 71, '25'], [475, 232, '35']]
+        #self.unit = lib.geomath.UNIT()
+        #self.alarm = lib.alarm.ALARM()
+        #self.gui = lib.gui.GUI()
+        self.cache = nmea.CACHE()
+
+        self.gps = gps.GPS(self.gui, self.cache, self.unit)
+        # Get settings
+        self.settings()
 
     def start(self, csv_filename):
         '''Starts the NAVSTAT program and contains main loop.'''
@@ -65,11 +84,79 @@ def connect(self):
             x = x + 1
 
 
-
+def settings(self):
+		'''Open .config and load settings into respective variables'''
+		settings = open('navstat.config', 'r')
+		#Run through each line and load a setting
+		for line in settings:
+			#Line is not blank
+			if line != '\n' or '' or None:
+				#Line is not a comment
+				if line[0:1] != '#':
+					#Break up the setting name from contents
+					settings_item = line.split('=')
+					settings_item[1] = settings_item[1].rstrip()
+					#Load settings - more info in navstat.config
+					if settings_item[0] == 'frame_x':
+						self.gui.size[1] = int(settings_item[1])
+					elif settings_item[0] == 'frame_y':
+						self.gui.size[0] = int(settings_item[1])
+					elif settings_item[0] == 'top_speed':
+						self.gps.speed_top = int(settings_item[1])
+					elif settings_item[0] == 'night_mode':
+						if str(settings_item[1]) == 'OFF':
+							self.gui.night = True
+						else:
+							self.gui.night = False
+					elif settings_item[0] == 'track_mode':
+						if str(settings_item[1]) == 'OFF':
+							self.gps.track.mode = True
+						else:
+							self.gps.track.mode = False
+					elif settings_item[0] == 'mini_mode':
+						if str(settings_item[1]) == 'OFF':
+							self.gui.mini = True
+						else:
+							self.gui.mini = False
+					elif settings_item[0] == 'track_secs':
+						self.gps.track.save_info[0] = int(settings_item[1])
+					elif settings_item[0] == 'track_save':
+						self.gps.track.save_info[1] = int(settings_item[1])
+					elif settings_item[0] == 'track_location':
+						self.gps.track.location = str(settings_item[1])
+					elif settings_item[0] == 'track_maxsize':
+						self.gps.track.maxsize = int(settings_item[1])
+					elif settings_item[0] == 'route_location':
+						self.gps.route.location = str(settings_item[1])
+					elif settings_item[0] == 'unit_distance':
+						if str(settings_item[1]) == 'KM':
+							self.unit.measure[0] = 0
+						elif str(settings_item[1]) == 'MI':
+							self.unit.measure[0] = 1
+						elif str(settings_item[1]) == 'NM':
+							self.unit.measure[0] = 2
+						self.unit.text[0] = settings_item[1]
+					elif settings_item[0] == 'unit_speed':
+						if str(settings_item[1]) == 'KPH':
+							self.unit.measure[1] = 0
+						elif str(settings_item[1]) == 'MPH':
+							self.unit.measure[1] = 1
+						elif str(settings_item[1]) == 'NMPH':
+							self.unit.measure[1] = 2
+						self.unit.text[1] = settings_item[1].replace('PH','')
+					elif settings_item[0] == 'gps_location':
+						self.serial_info[0] = str(settings_item[1])
+					elif settings_item[0] == 'gps_baudrate':
+						self.serial_info[1] = int(settings_item[1])
+					elif settings_item[0] == 'version':
+						self.gui.version = settings_item[1]
+					elif settings_item[0] == 'xte_alarm':
+						self.xte_alarm = settings_item[1]
+		settings.close()
 
 
 def quit(self):
-    '''Gets NAVSTAT ready to quit.'''
+    '''Gets ready to quit.'''
     self.gui.screen.fill(self.gui.colour_1)
     self.gui.txt_out((self.gui.font_3.render('Exiting cleanly...', True, self.gui.colour_2)) ,355 ,128)
     pygame.display.flip()
